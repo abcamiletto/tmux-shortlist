@@ -88,7 +88,11 @@ jump_to() {
 }
 
 open_picker() {
-  command -v fzf >/dev/null 2>&1 || die "tmux-shortlist requires fzf"
+  if ! command -v fzf >/dev/null 2>&1; then
+    tmux display-message "tmux-shortlist requires fzf"
+    echo "tmux-shortlist requires fzf" >&2
+    exit 1
+  fi
 
   popup_width="$(tmux show-option -gqv "@shortlist-popup-width")"
   popup_height="$(tmux show-option -gqv "@shortlist-popup-height")"
@@ -116,12 +120,6 @@ selected="$(
   printf -v tmux_command '%q ' env "SHORTLIST_SCRIPT=$0" "$SHELL" -lc "$picker_command"
 
   tmux display-popup -E -w "$popup_width" -h "$popup_height" "$tmux_command"
-}
-
-die() {
-  tmux display-message "$1"
-  echo "$1" >&2
-  exit 1
 }
 
 case "${1:-open}" in
