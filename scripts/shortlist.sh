@@ -113,8 +113,8 @@ selected="$(
       --bind="k:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} up)+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="j:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} down)+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="esc:abort"
-)"
-[ -n "$selected" ] && "$SHORTLIST_SCRIPT" jump "${selected%%	*}"
+)" || exit 0
+"$SHORTLIST_SCRIPT" jump "${selected%%	*}"
 '
 
   printf -v tmux_command '%q ' env "SHORTLIST_SCRIPT=$0" "$SHELL" -lc "$picker_command"
