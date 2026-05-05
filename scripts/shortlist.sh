@@ -113,21 +113,21 @@ open_picker() {
   popup_height="$(tmux show-option -gqv "@shortlist-popup-height")"
   popup_width="${popup_width:-80%}"
   popup_height="${popup_height:-70%}"
-  last_pane_id="$(cat "$last_file")"
-  find_position "$last_pane_id"
-  shortlist_position="$position"
+  shortlist_file="$(mktemp)"
+  list_items >"$shortlist_file"
+
+  if [ ! -s "$shortlist_file" ]; then
+    rm -f "$shortlist_file"
+    tmux display-message "tmux-shortlist is empty"
+    exit 0
+  fi
+
+  find_position "$(cat "$last_file")"
 
   # shellcheck disable=SC2016
   picker_command='
-shortlist_file="$(mktemp)"
-trap "rm -f \"$shortlist_file\"" EXIT
-"$SHORTLIST_SCRIPT" list >"$shortlist_file"
-[ -s "$shortlist_file" ] || {
-  tmux display-message "tmux-shortlist is empty"
-  exit 0
-}
 selected="$(
-  FZF_DEFAULT_COMMAND= fzf <"$shortlist_file" \
+  FZF_DEFAULT_COMMAND= fzf <"$SHORTLIST_FILE" \
       --prompt="Filter " --delimiter="\t" --with-nth="{2}  {3}  {4}" --nth=2,3,4 \
       --height=100% --layout=reverse --padding=0,1 \
       --footer="enter: jump | j/k: reorder | ctrl-x: remove | esc: close" \
@@ -143,9 +143,10 @@ selected="$(
 "$SHORTLIST_SCRIPT" jump "${selected%%	*}"
 '
 
-  printf -v tmux_command '%q ' env "SHORTLIST_SCRIPT=$0" "SHORTLIST_POSITION=$shortlist_position" "$SHELL" -lc "$picker_command"
+  printf -v tmux_command '%q ' env "SHORTLIST_SCRIPT=$0" "SHORTLIST_FILE=$shortlist_file" "SHORTLIST_POSITION=$position" "$SHELL" -lc "$picker_command"
 
   tmux display-popup -E -b rounded -w "$popup_width" -h "$popup_height" "$tmux_command"
+  rm -f "$shortlist_file"
 }
 
 case "${1:-open}" in
