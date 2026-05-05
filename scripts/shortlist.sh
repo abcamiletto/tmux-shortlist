@@ -127,7 +127,8 @@ trap "rm -f \"$shortlist_file\"" EXIT
   exit 0
 }
 selected="$(
-  fzf --prompt="Filter " --delimiter="\t" --with-nth="{2}  {3}  {4}" --nth=2,3,4 \
+  FZF_DEFAULT_COMMAND= fzf <"$shortlist_file" \
+      --prompt="Filter " --delimiter="\t" --with-nth="{2}  {3}  {4}" --nth=2,3,4 \
       --height=100% --layout=reverse --padding=0,1 \
       --footer="enter: jump | j/k: reorder | ctrl-x: remove | esc: close" \
       --info=inline-right --pointer=">" \
@@ -138,7 +139,6 @@ selected="$(
       --bind="j:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} down)+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="start:pos($SHORTLIST_POSITION)" \
       --bind="esc:abort"
-    <"$shortlist_file"
 )" || exit 0
 "$SHORTLIST_SCRIPT" jump "${selected%%	*}"
 '
