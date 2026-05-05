@@ -26,6 +26,7 @@ Press `prefix` + `m` to open the shortlist:
 - `Enter`: jump to the selected pane
 - `k`: move the selected pane up
 - `j`: move the selected pane down
+- `ctrl-r`: rename the selected pane
 - `ctrl-x`: remove the selected pane
 - `Esc`: close the shortlist
 

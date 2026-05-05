@@ -9,13 +9,27 @@ mkdir -p "$state_dir"
 touch "$state_file" "$last_file"
 
 pane_alive() {
-  tmux display-message -p -t "$1" "#{pane_id}" >/dev/null 2>&1
+  [ "$(tmux display-message -p -t "$1" "#{pane_id}" 2>/dev/null)" = "$1" ]
+}
+
+clean_name() {
+  printf '%s' "${1:-}" | tr '\t\n\r' '   ' | sed 's/^ *//; s/ *$//'
+}
+
+prune_items() {
+  tmp_file="$(mktemp "$state_file.XXXXXX")"
+  while IFS=$'\t' read -r pane_id name; do
+    [ -n "${pane_id:-}" ] || continue
+    pane_alive "$pane_id" || continue
+    printf '%s\t%s\n' "$pane_id" "$name"
+  done <"$state_file" >"$tmp_file"
+  mv "$tmp_file" "$state_file"
+  pane_alive "$(cat "$last_file")" || : >"$last_file"
 }
 
 list_items() {
   while IFS=$'\t' read -r pane_id name; do
     [ -n "${pane_id:-}" ] || continue
-    pane_alive "$pane_id" || continue
     metadata="$(tmux display-message -p -t "$pane_id" "#{session_name}:#{window_index}.#{pane_index}	#{pane_current_path}")"
     printf '%s\t%s\t%s\n' "$pane_id" "$name" "$metadata"
   done <"$state_file"
@@ -33,7 +47,7 @@ find_position() {
 }
 
 add_current() {
-  name="$(printf '%s' "${1:-}" | tr '\t\n\r' '   ' | sed 's/^ *//; s/ *$//')"
+  name="$(clean_name "$*")"
   [ -n "$name" ] || name="$(tmux display-message -p '#{window_name}')"
   pane_id="$(tmux display-message -p '#{pane_id}')"
   tmp_file="$(mktemp "$state_file.XXXXXX")"
@@ -54,6 +68,21 @@ remove_item() {
   awk -F '\t' -v pane_id="$pane_id" '$1 != pane_id' "$state_file" >"$tmp_file"
   mv "$tmp_file" "$state_file"
   [ "$(cat "$last_file")" = "$pane_id" ] && : >"$last_file"
+}
+
+rename_item() {
+  pane_id="${1:-}"
+  shift || true
+  name="$(clean_name "$*")"
+  [ -n "$pane_id" ] || exit 0
+  [ -n "$name" ] || exit 0
+
+  tmp_file="$(mktemp "$state_file.XXXXXX")"
+  awk -F '\t' -v OFS='\t' -v pane_id="$pane_id" -v name="$name" '
+    $1 == pane_id { $2 = name }
+    { print }
+  ' "$state_file" >"$tmp_file"
+  mv "$tmp_file" "$state_file"
 }
 
 move_item() {
@@ -113,6 +142,7 @@ open_picker() {
   popup_height="$(tmux show-option -gqv "@shortlist-popup-height")"
   popup_width="${popup_width:-80%}"
   popup_height="${popup_height:-70%}"
+  prune_items
   shortlist_file="$(mktemp)"
   list_items >"$shortlist_file"
 
@@ -134,6 +164,7 @@ selected="$(
       --info=inline-right --pointer=">" \
       --preview="tmux capture-pane -ep -t {1} -S -60" \
       --preview-window=right,55%,border-left \
+      --bind="ctrl-r:execute-silent(tmux command-prompt -p rename: \"run-shell \\\"$SHORTLIST_SCRIPT rename {1} %%\\\"\")+abort" \
       --bind="ctrl-x:execute-silent(\"$SHORTLIST_SCRIPT\" remove {1})+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="k:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} up)+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="j:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} down)+reload(\"$SHORTLIST_SCRIPT\" list)" \
@@ -151,10 +182,11 @@ selected="$(
 
 case "${1:-open}" in
   add) shift; add_current "$*" ;;
-  list) list_items ;;
+  list) prune_items; list_items ;;
   remove) remove_item "${2:-}" ;;
+  rename) shift; rename_item "$@" ;;
   move) move_item "${2:-}" "${3:-}" ;;
   jump) jump_to "${2:-}" ;;
   open) open_picker ;;
-  *) echo "usage: $0 [add NAME|list|remove PANE|move PANE up|move PANE down|jump PANE|open]" >&2; exit 2 ;;
+  *) echo "usage: $0 [add NAME|list|remove PANE|rename PANE NAME|move PANE up|move PANE down|jump PANE|open]" >&2; exit 2 ;;
 esac
