@@ -119,7 +119,7 @@ selected="$(
 
   printf -v tmux_command '%q ' env "SHORTLIST_SCRIPT=$0" "$SHELL" -lc "$picker_command"
 
-  tmux display-popup -E -w "$popup_width" -h "$popup_height" "$tmux_command"
+  tmux display-popup -E -b rounded -w "$popup_width" -h "$popup_height" "$tmux_command"
 }
 
 case "${1:-open}" in
