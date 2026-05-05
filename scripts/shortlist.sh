@@ -129,7 +129,7 @@ open_picker() {
 selected="$(
   FZF_DEFAULT_COMMAND= fzf <"$SHORTLIST_FILE" \
       --prompt="Filter " --delimiter="\t" --with-nth="{2}  {3}  {4}" --nth=2,3,4 \
-      --height=100% --layout=reverse --padding=0,1 \
+      --height=100% --layout=reverse --cycle --padding=0,1 \
       --footer="enter: jump | j/k: reorder | ctrl-x: remove | esc: close" \
       --info=inline-right --pointer=">" \
       --preview="tmux capture-pane -ep -t {1} -S -60" \
