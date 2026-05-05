@@ -6,7 +6,7 @@ state_file="$state_dir/panes"
 last_file="$state_dir/last"
 
 mkdir -p "$state_dir"
-touch "$state_file"
+touch "$state_file" "$last_file"
 
 pane_alive() {
   tmux display-message -p -t "$1" "#{pane_id}" >/dev/null 2>&1
@@ -101,7 +101,7 @@ open_picker() {
   popup_height="$(tmux show-option -gqv "@shortlist-popup-height")"
   popup_width="${popup_width:-80%}"
   popup_height="${popup_height:-70%}"
-  last_pane_id="$(cat "$last_file" 2>/dev/null || true)"
+  last_pane_id="$(cat "$last_file")"
   shortlist_position="$(list_items | awk -F '\t' -v pane_id="$last_pane_id" '$1 == pane_id { print NR; exit }')"
   shortlist_position="${shortlist_position:-1}"
 
@@ -112,7 +112,7 @@ selected="$(
     fzf --prompt="Filter " --delimiter="\t" --with-nth="{2}  {3}  {4}" --nth=2,3,4 \
       --height=100% --layout=reverse --padding=0,1 \
       --footer="enter: jump | j/k: reorder | ctrl-x: remove | esc: close" \
-      --info=inline-right --pointer=">" --marker="+" \
+      --info=inline-right --pointer=">" \
       --preview="tmux capture-pane -ep -t {1} -S -60" \
       --preview-window=down,60%,border-top \
       --bind="ctrl-x:execute-silent(\"$SHORTLIST_SCRIPT\" remove {1})+reload(\"$SHORTLIST_SCRIPT\" list)" \
