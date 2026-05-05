@@ -137,7 +137,7 @@ selected="$(
       --bind="ctrl-x:execute-silent(\"$SHORTLIST_SCRIPT\" remove {1})+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="k:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} up)+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="j:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} down)+reload(\"$SHORTLIST_SCRIPT\" list)" \
-      --bind="start:pos($SHORTLIST_POSITION)" \
+      --bind="load:pos($SHORTLIST_POSITION)" \
       --bind="esc:abort"
 )" || exit 0
 "$SHORTLIST_SCRIPT" jump "${selected%%	*}"
