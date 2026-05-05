@@ -3,6 +3,7 @@ set -euo pipefail
 
 state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/tmux-shortlist"
 state_file="$state_dir/panes"
+last_file="$state_dir/last"
 
 mkdir -p "$state_dir"
 touch "$state_file"
@@ -80,6 +81,8 @@ jump_to() {
     exit 1
   fi
 
+  printf '%s\n' "$pane_id" >"$last_file"
+
   session_id="$(tmux display-message -p -t "$pane_id" "#{session_id}")"
   window_id="$(tmux display-message -p -t "$pane_id" "#{window_id}")"
   tmux switch-client -t "$session_id"
@@ -98,6 +101,9 @@ open_picker() {
   popup_height="$(tmux show-option -gqv "@shortlist-popup-height")"
   popup_width="${popup_width:-80%}"
   popup_height="${popup_height:-70%}"
+  last_pane_id="$(cat "$last_file" 2>/dev/null || true)"
+  shortlist_position="$(list_items | awk -F '\t' -v pane_id="$last_pane_id" '$1 == pane_id { print NR; exit }')"
+  shortlist_position="${shortlist_position:-1}"
 
   # shellcheck disable=SC2016
   picker_command='
@@ -112,12 +118,13 @@ selected="$(
       --bind="ctrl-x:execute-silent(\"$SHORTLIST_SCRIPT\" remove {1})+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="k:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} up)+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="j:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} down)+reload(\"$SHORTLIST_SCRIPT\" list)" \
+      --bind="start:pos($SHORTLIST_POSITION)" \
       --bind="esc:abort"
 )" || exit 0
 "$SHORTLIST_SCRIPT" jump "${selected%%	*}"
 '
 
-  printf -v tmux_command '%q ' env "SHORTLIST_SCRIPT=$0" "$SHELL" -lc "$picker_command"
+  printf -v tmux_command '%q ' env "SHORTLIST_SCRIPT=$0" "SHORTLIST_POSITION=$shortlist_position" "$SHELL" -lc "$picker_command"
 
   tmux display-popup -E -b rounded -w "$popup_width" -h "$popup_height" "$tmux_command"
 }
