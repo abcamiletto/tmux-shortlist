@@ -104,8 +104,8 @@ open_picker() {
 selected="$(
   "$SHORTLIST_SCRIPT" list |
     fzf --prompt="Filter " --delimiter="\t" --with-nth="{2}  {3}  {4}" --nth=2,3,4 \
-      --height=100% --layout=reverse --border=rounded \
-      --border-label=" tmux shortlist " --footer="enter: jump | j/k: reorder | ctrl-x: remove | esc: close" \
+      --height=100% --layout=reverse \
+      --footer="enter: jump | j/k: reorder | ctrl-x: remove | esc: close" \
       --info=inline-right --pointer=">" --marker="+" \
       --preview="tmux capture-pane -ep -t {1} -S -60" \
       --preview-window=down,60%,border-top \
