@@ -21,6 +21,17 @@ list_items() {
   done <"$state_file"
 }
 
+find_position() {
+  position=0
+  while IFS=$'\t' read -r pane_id _; do
+    [ -n "${pane_id:-}" ] || continue
+    pane_alive "$pane_id" || continue
+    position=$((position + 1))
+    [ "$pane_id" = "$1" ] && return
+  done <"$state_file"
+  position=1
+}
+
 add_current() {
   name="$(printf '%s' "${1:-}" | tr '\t\n\r' '   ' | sed 's/^ *//; s/ *$//')"
   [ -n "$name" ] || name="$(tmux display-message -p '#{window_name}')"
@@ -102,14 +113,16 @@ open_picker() {
   popup_width="${popup_width:-80%}"
   popup_height="${popup_height:-70%}"
   last_pane_id="$(cat "$last_file")"
-  shortlist_position="$(list_items | awk -F '\t' -v pane_id="$last_pane_id" '$1 == pane_id { print NR; exit }')"
-  shortlist_position="${shortlist_position:-1}"
+  find_position "$last_pane_id"
+  shortlist_position="$position"
 
   # shellcheck disable=SC2016
   picker_command='
+shortlist_file="$(mktemp)"
+trap "rm -f \"$shortlist_file\"" EXIT
+"$SHORTLIST_SCRIPT" list >"$shortlist_file"
 selected="$(
-  "$SHORTLIST_SCRIPT" list |
-    fzf --prompt="Filter " --delimiter="\t" --with-nth="{2}  {3}  {4}" --nth=2,3,4 \
+  fzf --prompt="Filter " --delimiter="\t" --with-nth="{2}  {3}  {4}" --nth=2,3,4 \
       --height=100% --layout=reverse --padding=0,1 \
       --footer="enter: jump | j/k: reorder | ctrl-x: remove | esc: close" \
       --info=inline-right --pointer=">" \
@@ -120,6 +133,7 @@ selected="$(
       --bind="j:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} down)+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="start:pos($SHORTLIST_POSITION)" \
       --bind="esc:abort"
+    <"$shortlist_file"
 )" || exit 0
 "$SHORTLIST_SCRIPT" jump "${selected%%	*}"
 '
