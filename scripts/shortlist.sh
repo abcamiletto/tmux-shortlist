@@ -16,15 +16,23 @@ clean_name() {
   printf '%s' "${1:-}" | tr '\t\n\r' '   ' | sed 's/^ *//; s/ *$//'
 }
 
-prune_items() {
+replace_state() {
   tmp_file="$(mktemp "$state_file.XXXXXX")"
+  "$@" >"$tmp_file"
+  mv "$tmp_file" "$state_file"
+}
+
+prune_items() {
+  replace_state keep_live_items
+  pane_alive "$(cat "$last_file")" || : >"$last_file"
+}
+
+keep_live_items() {
   while IFS=$'\t' read -r pane_id name; do
     [ -n "${pane_id:-}" ] || continue
     pane_alive "$pane_id" || continue
     printf '%s\t%s\n' "$pane_id" "$name"
-  done <"$state_file" >"$tmp_file"
-  mv "$tmp_file" "$state_file"
-  pane_alive "$(cat "$last_file")" || : >"$last_file"
+  done <"$state_file"
 }
 
 list_items() {
@@ -50,11 +58,9 @@ add_current() {
   name="$(clean_name "$*")"
   [ -n "$name" ] || name="$(tmux display-message -p '#{window_name}')"
   pane_id="$(tmux display-message -p '#{pane_id}')"
-  tmp_file="$(mktemp "$state_file.XXXXXX")"
 
   # shellcheck disable=SC2016
-  awk -F '\t' -v pane_id="$pane_id" '$1 != pane_id' "$state_file" >"$tmp_file"
-  mv "$tmp_file" "$state_file"
+  replace_state awk -F '\t' -v pane_id="$pane_id" '$1 != pane_id' "$state_file"
   printf '%s\t%s\n' "$pane_id" "$name" >>"$state_file"
   tmux display-message "shortlisted: $name"
 }
@@ -62,11 +68,9 @@ add_current() {
 remove_item() {
   pane_id="${1:-}"
   [ -n "$pane_id" ] || exit 0
-  tmp_file="$(mktemp "$state_file.XXXXXX")"
 
   # shellcheck disable=SC2016
-  awk -F '\t' -v pane_id="$pane_id" '$1 != pane_id' "$state_file" >"$tmp_file"
-  mv "$tmp_file" "$state_file"
+  replace_state awk -F '\t' -v pane_id="$pane_id" '$1 != pane_id' "$state_file"
   [ "$(cat "$last_file")" = "$pane_id" ] && : >"$last_file"
 }
 
@@ -77,12 +81,11 @@ rename_item() {
   [ -n "$pane_id" ] || exit 0
   [ -n "$name" ] || exit 0
 
-  tmp_file="$(mktemp "$state_file.XXXXXX")"
-  awk -F '\t' -v OFS='\t' -v pane_id="$pane_id" -v name="$name" '
+  # shellcheck disable=SC2016
+  replace_state awk -F '\t' -v OFS='\t' -v pane_id="$pane_id" -v name="$name" '
     $1 == pane_id { $2 = name }
     { print }
-  ' "$state_file" >"$tmp_file"
-  mv "$tmp_file" "$state_file"
+  ' "$state_file"
 }
 
 move_item() {
@@ -90,8 +93,8 @@ move_item() {
   direction="${2:-}"
   [ -n "$pane_id" ] || exit 0
 
-  tmp_file="$(mktemp "$state_file.XXXXXX")"
-  awk -F '\t' -v OFS='\t' -v pane_id="$pane_id" -v direction="$direction" '
+  # shellcheck disable=SC2016
+  replace_state awk -F '\t' -v OFS='\t' -v pane_id="$pane_id" -v direction="$direction" '
     { rows[++n] = $0 }
     END {
       for (i = 1; i <= n; i++) {
@@ -108,8 +111,7 @@ move_item() {
       }
       for (i = 1; i <= n; i++) print rows[i]
     }
-  ' "$state_file" >"$tmp_file"
-  mv "$tmp_file" "$state_file"
+  ' "$state_file"
 }
 
 jump_to() {
