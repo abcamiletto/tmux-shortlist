@@ -15,9 +15,8 @@ list_items() {
   while IFS=$'\t' read -r pane_id name; do
     [ -n "${pane_id:-}" ] || continue
     pane_alive "$pane_id" || continue
-    location="$(tmux display-message -p -t "$pane_id" "#{session_name}:#{window_index}.#{pane_index}")"
-    path="$(tmux display-message -p -t "$pane_id" "#{pane_current_path}")"
-    printf '%s\t%s\t%s\t%s\n' "$pane_id" "$name" "$location" "$path"
+    metadata="$(tmux display-message -p -t "$pane_id" "#{session_name}:#{window_index}.#{pane_index}	#{pane_current_path}")"
+    printf '%s\t%s\t%s\n' "$pane_id" "$name" "$metadata"
   done <"$state_file"
 }
 
