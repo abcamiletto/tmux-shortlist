@@ -104,8 +104,8 @@ selected="$(
       --preview="tmux capture-pane -ep -t {1} -S -60" \
       --preview-window=down,60%,border-top \
       --bind="ctrl-x:execute-silent(\"$SHORTLIST_SCRIPT\" remove {1})+reload(\"$SHORTLIST_SCRIPT\" list)" \
-      --bind="ctrl-u:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} up)+reload(\"$SHORTLIST_SCRIPT\" list)" \
-      --bind="ctrl-d:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} down)+reload(\"$SHORTLIST_SCRIPT\" list)"
+      --bind="k:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} up)+reload(\"$SHORTLIST_SCRIPT\" list)" \
+      --bind="j:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} down)+reload(\"$SHORTLIST_SCRIPT\" list)"
 )"
 [ -n "$selected" ] && "$SHORTLIST_SCRIPT" jump "${selected%%	*}"
 '

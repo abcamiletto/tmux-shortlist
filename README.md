@@ -24,8 +24,8 @@ prompted for a name.
 Press `prefix` + `S` to open the shortlist:
 
 - `Enter`: jump to the selected pane
-- `ctrl-u`: move the selected pane up
-- `ctrl-d`: move the selected pane down
+- `k`: move the selected pane up
+- `j`: move the selected pane down
 - `ctrl-x`: remove the selected pane
 
 ## Options
