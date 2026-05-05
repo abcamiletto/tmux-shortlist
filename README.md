@@ -18,10 +18,10 @@ Then press `prefix` + `I` to install.
 
 ## Usage
 
-Press `prefix` + `A` to add the current pane to the shortlist. You will be
+Press `prefix` + `a` to add the current pane to the shortlist. You will be
 prompted for a name.
 
-Press `prefix` + `M` to open the shortlist:
+Press `prefix` + `m` to open the shortlist:
 
 - `Enter`: jump to the selected pane
 - `k`: move the selected pane up
@@ -32,8 +32,8 @@ Press `prefix` + `M` to open the shortlist:
 ## Options
 
 ```tmux
-set -g @shortlist-key 'M'
-set -g @shortlist-add-key 'A'
+set -g @shortlist-key 'm'
+set -g @shortlist-add-key 'a'
 set -g @shortlist-popup-width '80%'
 set -g @shortlist-popup-height '70%'
 ```
