@@ -1,10 +1,10 @@
 # tmux-shortlist
 
-A small TPM plugin for jumping between tmux panes with a searchable shortlist.
+A small TPM plugin for starring tmux panes and jumping between them from a
+named shortlist.
 
-`tmux-shortlist` binds a key that opens a tmux popup picker. If `fzf` is installed,
-the picker lists every pane across every session with a live pane preview. If `fzf`
-is not installed, it falls back to tmux's built-in `choose-tree`.
+`tmux-shortlist` lets you mark important panes, give them names, reorder them,
+remove them, and jump back to them from a scrollable popup list.
 
 ## Installation
 
@@ -18,13 +18,21 @@ Then press `prefix` + `I` to install.
 
 ## Usage
 
-Press `prefix` + `S` to open the shortlist, search for a pane, and press `Enter`
-to jump to it.
+Press `prefix` + `A` to add the current pane to the shortlist. You will be
+prompted for a name.
+
+Press `prefix` + `S` to open the shortlist:
+
+- `Enter`: jump to the selected pane
+- `ctrl-u`: move the selected pane up
+- `ctrl-d`: move the selected pane down
+- `ctrl-x`: remove the selected pane
 
 ## Options
 
 ```tmux
 set -g @shortlist-key 'S'
+set -g @shortlist-add-key 'A'
 set -g @shortlist-popup-width '80%'
 set -g @shortlist-popup-height '70%'
 ```
@@ -32,7 +40,7 @@ set -g @shortlist-popup-height '70%'
 ## Requirements
 
 - tmux
-- Optional: `fzf` for the searchable popup picker
+- `fzf`
 
 ## License
 
