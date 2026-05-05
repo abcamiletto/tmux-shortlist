@@ -27,6 +27,7 @@ Press `prefix` + `M` to open the shortlist:
 - `k`: move the selected pane up
 - `j`: move the selected pane down
 - `ctrl-x`: remove the selected pane
+- `Esc`: close the shortlist
 
 ## Options
 
