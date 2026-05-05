@@ -53,6 +53,7 @@ remove_item() {
   # shellcheck disable=SC2016
   awk -F '\t' -v pane_id="$pane_id" '$1 != pane_id' "$state_file" >"$tmp_file"
   mv "$tmp_file" "$state_file"
+  [ "$(cat "$last_file")" = "$pane_id" ] && : >"$last_file"
 }
 
 move_item() {
@@ -121,6 +122,10 @@ open_picker() {
 shortlist_file="$(mktemp)"
 trap "rm -f \"$shortlist_file\"" EXIT
 "$SHORTLIST_SCRIPT" list >"$shortlist_file"
+[ -s "$shortlist_file" ] || {
+  tmux display-message "tmux-shortlist is empty"
+  exit 0
+}
 selected="$(
   fzf --prompt="Filter " --delimiter="\t" --with-nth="{2}  {3}  {4}" --nth=2,3,4 \
       --height=100% --layout=reverse --padding=0,1 \
