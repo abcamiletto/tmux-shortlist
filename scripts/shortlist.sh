@@ -132,7 +132,7 @@ selected="$(
       --footer="enter: jump | j/k: reorder | ctrl-x: remove | esc: close" \
       --info=inline-right --pointer=">" \
       --preview="tmux capture-pane -ep -t {1} -S -60" \
-      --preview-window=down,60%,border-top \
+      --preview-window=right,55%,border-left \
       --bind="ctrl-x:execute-silent(\"$SHORTLIST_SCRIPT\" remove {1})+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="k:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} up)+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="j:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} down)+reload(\"$SHORTLIST_SCRIPT\" list)" \
