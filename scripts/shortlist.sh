@@ -7,10 +7,6 @@ state_file="$state_dir/panes"
 mkdir -p "$state_dir"
 touch "$state_file"
 
-clean_name() {
-  printf '%s' "$1" | tr '\t\n\r' '   ' | sed 's/^ *//; s/ *$//'
-}
-
 pane_alive() {
   tmux display-message -p -t "$1" "#{pane_id}" >/dev/null 2>&1
 }
@@ -24,19 +20,15 @@ list_items() {
   done <"$state_file"
 }
 
-write_items() {
-  tmp_file="$(mktemp "$state_file.XXXXXX")"
-  "$@" >"$tmp_file"
-  mv "$tmp_file" "$state_file"
-}
-
 add_current() {
-  name="$(clean_name "${1:-}")"
+  name="$(printf '%s' "${1:-}" | tr '\t\n\r' '   ' | sed 's/^ *//; s/ *$//')"
   [ -n "$name" ] || name="$(tmux display-message -p '#{window_name}')"
   pane_id="$(tmux display-message -p '#{pane_id}')"
+  tmp_file="$(mktemp "$state_file.XXXXXX")"
 
   # shellcheck disable=SC2016
-  write_items awk -F '\t' -v pane_id="$pane_id" '$1 != pane_id' "$state_file"
+  awk -F '\t' -v pane_id="$pane_id" '$1 != pane_id' "$state_file" >"$tmp_file"
+  mv "$tmp_file" "$state_file"
   printf '%s\t%s\n' "$pane_id" "$name" >>"$state_file"
   tmux display-message "shortlisted: $name"
 }
@@ -44,8 +36,11 @@ add_current() {
 remove_item() {
   pane_id="${1:-}"
   [ -n "$pane_id" ] || exit 0
+  tmp_file="$(mktemp "$state_file.XXXXXX")"
+
   # shellcheck disable=SC2016
-  write_items awk -F '\t' -v pane_id="$pane_id" '$1 != pane_id' "$state_file"
+  awk -F '\t' -v pane_id="$pane_id" '$1 != pane_id' "$state_file" >"$tmp_file"
+  mv "$tmp_file" "$state_file"
 }
 
 move_item() {
@@ -93,10 +88,7 @@ jump_to() {
 }
 
 open_picker() {
-  if ! command -v fzf >/dev/null 2>&1; then
-    tmux display-message "tmux-shortlist requires fzf for the interactive list"
-    exit 1
-  fi
+  command -v fzf >/dev/null 2>&1 || die "tmux-shortlist requires fzf"
 
   popup_width="$(tmux show-option -gqv "@shortlist-popup-width")"
   popup_height="$(tmux show-option -gqv "@shortlist-popup-height")"
@@ -120,11 +112,13 @@ selected="$(
 
   printf -v tmux_command '%q ' env "SHORTLIST_SCRIPT=$0" "$SHELL" -lc "$picker_command"
 
-  if tmux display-popup -E -w "$popup_width" -h "$popup_height" "$tmux_command" 2>/dev/null; then
-    exit 0
-  fi
+  tmux display-popup -E -w "$popup_width" -h "$popup_height" "$tmux_command"
+}
 
-  tmux new-window -n shortlist "$tmux_command"
+die() {
+  tmux display-message "$1"
+  echo "$1" >&2
+  exit 1
 }
 
 case "${1:-open}" in
