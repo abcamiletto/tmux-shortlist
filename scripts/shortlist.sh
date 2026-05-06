@@ -114,6 +114,14 @@ move_item() {
   ' "$state_file"
 }
 
+move_and_focus() {
+  pane_id="${1:-}"
+  direction="${2:-}"
+  move_item "$pane_id" "$direction"
+  find_position "$pane_id"
+  printf 'reload-sync(%q list)+pos(%s)\n' "$0" "$position"
+}
+
 jump_to() {
   pane_id="${1:-}"
   [ -n "$pane_id" ] || exit 0
@@ -168,8 +176,8 @@ selected="$(
       --preview-window=right,55%,border-left \
       --bind="ctrl-r:execute-silent(tmux command-prompt -p rename: \"run-shell \\\"$SHORTLIST_SCRIPT rename {1} %%\\\"\")+abort" \
       --bind="ctrl-x:execute-silent(\"$SHORTLIST_SCRIPT\" remove {1})+reload(\"$SHORTLIST_SCRIPT\" list)" \
-      --bind="k:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} up)+reload(\"$SHORTLIST_SCRIPT\" list)" \
-      --bind="j:execute-silent(\"$SHORTLIST_SCRIPT\" move {1} down)+reload(\"$SHORTLIST_SCRIPT\" list)" \
+      --bind="k:transform(\"$SHORTLIST_SCRIPT\" move-focus {1} up)" \
+      --bind="j:transform(\"$SHORTLIST_SCRIPT\" move-focus {1} down)" \
       --bind="load:pos($SHORTLIST_POSITION)" \
       --bind="esc:abort"
 )" || exit 0
@@ -188,6 +196,7 @@ case "${1:-open}" in
   remove) remove_item "${2:-}" ;;
   rename) shift; rename_item "$@" ;;
   move) move_item "${2:-}" "${3:-}" ;;
+  move-focus) move_and_focus "${2:-}" "${3:-}" ;;
   jump) jump_to "${2:-}" ;;
   open) open_picker ;;
   *) echo "usage: $0 [add NAME|list|remove PANE|rename PANE NAME|move PANE up|move PANE down|jump PANE|open]" >&2; exit 2 ;;
