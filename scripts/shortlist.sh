@@ -142,16 +142,17 @@ jump_to() {
 }
 
 open_picker() {
-  if ! command -v fzf >/dev/null 2>&1; then
+  if ! command -v fzf >/dev/null; then
     tmux display-message "tmux-shortlist requires fzf"
     echo "tmux-shortlist requires fzf" >&2
     exit 1
   fi
 
   popup_width="$(tmux show-option -gqv "@shortlist-popup-width")"
-  popup_height="$(tmux show-option -gqv "@shortlist-popup-height")"
   popup_width="${popup_width:-80%}"
+  popup_height="$(tmux show-option -gqv "@shortlist-popup-height")"
   popup_height="${popup_height:-70%}"
+
   prune_items
   shortlist_file="$(mktemp)"
   list_items >"$shortlist_file"
@@ -195,9 +196,8 @@ case "${1:-open}" in
   list) prune_items; list_items ;;
   remove) remove_item "${2:-}" ;;
   rename) shift; rename_item "$@" ;;
-  move) move_item "${2:-}" "${3:-}" ;;
   move-focus) move_and_focus "${2:-}" "${3:-}" ;;
   jump) jump_to "${2:-}" ;;
   open) open_picker ;;
-  *) echo "usage: $0 [add NAME|list|remove PANE|rename PANE NAME|move PANE up|move PANE down|jump PANE|open]" >&2; exit 2 ;;
+  *) echo "usage: $0 [add NAME|list|remove PANE|rename PANE NAME|jump PANE|open]" >&2; exit 2 ;;
 esac
