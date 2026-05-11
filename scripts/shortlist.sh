@@ -88,6 +88,15 @@ rename_item() {
   ' "$state_file"
 }
 
+prompt_rename() {
+  pane_id="${1:-}"
+  [ -n "$pane_id" ] || exit 0
+
+  printf '\033[2J\033[Hrename: ' >/dev/tty
+  IFS= read -r name </dev/tty || exit 0
+  rename_item "$pane_id" "$name"
+}
+
 move_item() {
   pane_id="${1:-}"
   direction="${2:-}"
@@ -169,20 +178,28 @@ open_picker() {
   picker_command='
 selected="$(
   FZF_DEFAULT_COMMAND= fzf <"$SHORTLIST_FILE" \
+      --expect=ctrl-r \
       --prompt="Filter " --delimiter="\t" --with-nth="{2}  {3}  {4}" --nth=2,3,4 \
       --height=100% --layout=reverse --cycle --padding=0,1 \
-      --footer="enter: jump | j/k: reorder | ctrl-x: remove | esc: close" \
+      --footer="enter jump | ctrl-r rename | j/k move | ctrl-x remove | esc close" \
       --info=inline-right --pointer=">" \
       --preview="tmux capture-pane -ep -t {1} -S -60" \
       --preview-window=right,55%,border-left \
-      --bind="ctrl-r:execute-silent(tmux command-prompt -p rename: \"run-shell \\\"$SHORTLIST_SCRIPT rename {1} %%\\\"\")+abort" \
       --bind="ctrl-x:execute-silent(\"$SHORTLIST_SCRIPT\" remove {1})+reload(\"$SHORTLIST_SCRIPT\" list)" \
       --bind="k:transform(\"$SHORTLIST_SCRIPT\" move-focus {1} up)" \
       --bind="j:transform(\"$SHORTLIST_SCRIPT\" move-focus {1} down)" \
       --bind="load:pos($SHORTLIST_POSITION)" \
       --bind="esc:abort"
 )" || exit 0
-"$SHORTLIST_SCRIPT" jump "${selected%%	*}"
+key="$(printf "%s\n" "$selected" | sed -n "1p")"
+item="$(printf "%s\n" "$selected" | sed -n "2,\$p")"
+[ -n "$item" ] || item="$key"
+pane_id="${item%%	*}"
+
+case "$key" in
+  ctrl-r) "$SHORTLIST_SCRIPT" prompt-rename "$pane_id" ;;
+  *) "$SHORTLIST_SCRIPT" jump "$pane_id" ;;
+esac
 '
 
   printf -v tmux_command '%q ' env "SHORTLIST_SCRIPT=$0" "SHORTLIST_FILE=$shortlist_file" "SHORTLIST_POSITION=$position" "$SHELL" -lc "$picker_command"
@@ -196,6 +213,7 @@ case "${1:-open}" in
   list) prune_items; list_items ;;
   remove) remove_item "${2:-}" ;;
   rename) shift; rename_item "$@" ;;
+  prompt-rename) prompt_rename "${2:-}" ;;
   move-focus) move_and_focus "${2:-}" "${3:-}" ;;
   jump) jump_to "${2:-}" ;;
   open) open_picker ;;
